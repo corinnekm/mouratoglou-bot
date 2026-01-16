@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: mouratouglou
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
