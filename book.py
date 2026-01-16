@@ -8,8 +8,8 @@ TARGET_TIME = "12:30"       # HEURE STRICTE
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            # Max 2 réservations par session
 TIMEOUT_MINUTES = 3         # S'arrête après 5 minutes
-EMAIL = "corinnekubler@gmail.com"
-PASSWORD = "TODO"
+EMAIL = os.getenv("PADEL_EMAIL")
+PASSWORD = os.getenv("PADEL_PASSWORD")
 # ---------------------
 
 class MouratoglouSniper:
