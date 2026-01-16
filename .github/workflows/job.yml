@@ -1,0 +1,29 @@
+name: Padel Sniper Cron
+
+on:
+  schedule:
+    # 22:59 UTC is 23:59 CET (Paris/Brussels)
+    - cron: '59 22 * * *'
+  workflow_dispatch: # Allows you to run it manually for testing
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Sniper
+        env:
+          # Use Secrets to hide your credentials
+          PADEL_EMAIL: ${{ secrets.PADEL_EMAIL }}
+          PADEL_PASSWORD: ${{ secrets.PADEL_PASSWORD }}
+        run: python book.py
