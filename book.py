@@ -137,6 +137,30 @@ class MouratoglouSniper:
             return True
         return False
 
+
+def send_whatsapp_notification(message):
+    phone = os.getenv("TEXTMEBOT_PHONE")
+    apikey = os.getenv("TEXTMEBOT_API_KEY")
+    
+    if not phone or not apikey:
+        print("⚠️ WhatsApp (TextMeBot) non configuré.")
+        return
+
+    # Encodage du message
+    encoded_message = urllib.parse.quote(message)
+    
+    # URL spécifique à TextMeBot
+    url = f"https://api.textmebot.com/whatsapp.php?recipient={phone}&apikey={apikey}&text={encoded_message}"
+    
+    try:
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            print("📱 Notification WhatsApp envoyée via TextMeBot !")
+        else:
+            print(f"❌ Erreur TextMeBot : {r.status_code} - {r.text}")
+    except Exception as e:
+        print(f"⚠️ Impossible d'envoyer le message : {e}")
+
 def run():
     bot = MouratoglouSniper(EMAIL, PASSWORD)
     if bot.login():
@@ -173,6 +197,7 @@ def run():
                 time.sleep(15)
 
         print(f"\n🏁 Session terminée. Total réservations : {success_count}")
+        send_whatsapp_notification("\n🏁 Session terminée. Total réservations : {success_count}")
 
 if __name__ == "__main__":
     run()
