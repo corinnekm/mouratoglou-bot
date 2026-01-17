@@ -1,3 +1,4 @@
+import urllib.parse
 import os
 import requests
 import json
@@ -8,7 +9,7 @@ from datetime import datetime, timedelta
 TARGET_TIME = "12:30"       # HEURE STRICTE
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            # Max 2 réservations par session
-TIMEOUT_MINUTES = 3         # S'arrête après 5 minutes
+TIMEOUT_MINUTES = 1         # S'arrête après 3 minutes
 EMAIL = os.getenv("PADEL_EMAIL")
 PASSWORD = os.getenv("PADEL_PASSWORD")
 # ---------------------
