@@ -151,8 +151,7 @@ def send_whatsapp_notification(message):
     encoded_message = urllib.parse.quote(message)
     
     # URL spécifique à TextMeBot
-    url = f"https://api.textmebot.com/whatsapp.php?recipient={phone}&apikey={apikey}&text={encoded_message}"
-    
+    url = f"https://api.textmebot.com/send.php?recipient={phone}&apikey={apikey}&text={encoded_message}"
     try:
         r = requests.get(url, timeout=10)
         if r.status_code == 200:
