@@ -27,4 +27,6 @@ jobs:
           # Use Secrets to hide your credentials
           PADEL_EMAIL: ${{ secrets.PADEL_EMAIL }}
           PADEL_PASSWORD: ${{ secrets.PADEL_PASSWORD }}
+          TEXTMEBOT_PHONE: ${{ secrets.TEXTMEBOT_PHONE }}
+          TEXTMEBOT_API_KEY: ${{ secrets.TEXTMEBOT_API_KEY }}
         run: python book.py
