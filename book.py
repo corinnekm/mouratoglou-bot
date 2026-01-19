@@ -6,10 +6,11 @@ import time
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
-TARGET_TIME = "12:30"       # HEURE STRICTE
+TARGET_DATE = "2026-01-28"  # Date spécifique cible
+TARGET_TIME = "12:30"       # Heure du créneau
 DURATION = 3600             # 60 minutes
-MAX_BOOKINGS = 1            # Max 2 réservations par session
-TIMEOUT_MINUTES = 10        # S'arrête après 3 minutes
+MAX_BOOKINGS = 1            
+TIMEOUT_MINUTES = 5         # On insiste pendant 5 min après minuit
 EMAIL = os.getenv("PADEL_EMAIL")
 PASSWORD = os.getenv("PADEL_PASSWORD")
 # ---------------------
@@ -27,80 +28,69 @@ class MouratoglouSniper:
             "5bc14b1b-9969-4fdf-853a-37a6c224ab59",
             "61634271-297b-4fd0-92d5-4a038ba41374"
         ]
-        self.headers = {
+        self.session = requests.Session()
+        self.session.headers.update({
             'Accept': 'application/json, text/plain, */*',
             'Content-Type': 'application/json',
             'Origin': 'https://mouratogloucc.doinsport.club',
             'Referer': 'https://mouratogloucc.doinsport.club/',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
             'X-Locale': 'fr'
-        }
+        })
 
     def login(self):
         url = f"{self.base_url}/client_login_check"
         payload = {"username": self.email, "password": self.password, "club": f"/clubs/{self.club_id}", "origin": "white_label_app"}
-        r = requests.post(url, json=payload, headers=self.headers)
-        if r.status_code == 200:
-            self.headers['Authorization'] = f"Bearer {r.json().get('token')}"
-            print("✅ Connexion réussie.")
-            return True
-        return False
-
-    def get_valid_target_dates(self):
-        valid_dates = []
-        today = datetime.now()
-        for i in range(8, 1, -1): # Priorité J+8 vers J+2
-            future_date = today + timedelta(days=i)
-            if future_date.weekday() < 5: # Uniquement jours de semaine
-                valid_dates.append(future_date.strftime("%Y-%m-%d"))
-        return valid_dates
-
-    def find_slot(self, target_date):
-        url = f"{self.base_url}/clubs/playgrounds/plannings/{target_date}"
-        params = {'club.id': self.club_id, 'activities.id': self.activity_id, 'bookingType': 'unique'}
-        r = requests.get(url, headers=self.headers, params=params)
-
-        if r.status_code == 200:
-            data = r.json()
-            courts = data if isinstance(data, list) else data.get('hydra:member', [])
-            for court in courts:
-                for act in court.get('activities', []):
-                    for slot in act.get('slots', []):
-                        # --- VÉRIFICATION STRICTE DE L'HORAIRE ---
-                        if slot.get('startAt') == TARGET_TIME:
-                            for p in slot.get('prices', []):
-                                if p.get('duration') == DURATION and p.get('bookable'):
-                                    return {
-                                        "price_id": p.get('id'),
-                                        "p_id": court.get('id'),
-                                        "court_name": court.get('name'),
-                                        "price": p.get('pricePerParticipant', 1500),
-                                        "date": target_date,
-                                        "start_time": slot.get('startAt') # Stocké pour double-check
-                                    }
-        return None
-
-    def book(self, details):
-        # --- DOUBLE-CHECK AVANT RÉSERVATION ---
-        if details['start_time'] != TARGET_TIME:
-            print(f"⚠️ ERREUR CRITIQUE : L'horaire détecté ({details['start_time']}) ne correspond pas à la cible ({TARGET_TIME}).")
+        try:
+            r = self.session.post(url, json=payload, timeout=10)
+            if r.status_code == 200:
+                token = r.json().get('token')
+                self.session.headers.update({'Authorization': f"Bearer {token}"})
+                print(f"✅ Connexion réussie [{datetime.now().strftime('%H:%M:%S')}]")
+                return True
+            return False
+        except:
             return False
 
-        date_str = details['date']
-        start_dt = datetime.strptime(f"{date_str} {TARGET_TIME}", "%Y-%m-%d %H:%M")
+    def find_slot(self):
+        # On cible uniquement TARGET_DATE
+        url = f"{self.base_url}/clubs/playgrounds/plannings/{TARGET_DATE}"
+        params = {'club.id': self.club_id, 'activities.id': self.activity_id, 'bookingType': 'unique'}
+        try:
+            r = self.session.get(url, params=params, timeout=3)
+            if r.status_code == 200:
+                data = r.json()
+                courts = data if isinstance(data, list) else data.get('hydra:member', [])
+                for court in courts:
+                    for act in court.get('activities', []):
+                        for slot in act.get('slots', []):
+                            if slot.get('startAt') == TARGET_TIME:
+                                for p in slot.get('prices', []):
+                                    if p.get('duration') == DURATION and p.get('bookable'):
+                                        return {
+                                            "price_id": p.get('id'),
+                                            "p_id": court.get('id'),
+                                            "court_name": court.get('name'),
+                                            "price": p.get('pricePerParticipant', 1500)
+                                        }
+            return None
+        except:
+            return None
+
+    def book(self, details):
+        start_dt = datetime.strptime(f"{TARGET_DATE} {TARGET_TIME}", "%Y-%m-%d %H:%M")
         end_dt = start_dt + timedelta(seconds=DURATION)
 
         parts = [{"user": f"/user-clients/{self.user_client_id}", "restToPay": details['price'], "bookingOwner": True}]
         for pid in self.partner_ids:
             parts.append({"client": f"/clubs/clients/{pid}", "restToPay": details['price'], "bookingOwner": False})
 
-        # --- ETAPE 1 : POST ---
         post_payload = {
             "timetableBlockPrice": f"/clubs/playgrounds/timetables/blocks/prices/{details['price_id']}",
             "activity": f"/activities/{self.activity_id}",
             "club": f"/clubs/{self.club_id}",
-            "name": "kubler / PADEL / PADEL / PADEL",
-            "startAt": f"{date_str} {TARGET_TIME}:00",
+            "name": "kubler / PADEL",
+            "startAt": f"{TARGET_DATE} {TARGET_TIME}:00",
             "endAt": end_dt.strftime("%Y-%m-%d %H:%M:%S"),
             "playgrounds": [f"/clubs/playgrounds/{details['p_id']}"],
             "userClient": f"/user-clients/{self.user_client_id}",
@@ -109,95 +99,87 @@ class MouratoglouSniper:
             "creationOrigin": "white_label_app"
         }
 
-        print(f"\n🚀 [BOOKING] {details['court_name']} le {date_str} à {TARGET_TIME}")
-        resp = requests.post(f"{self.base_url}/clubs/bookings", json=post_payload, headers=self.headers)
+        print(f"\n🚀 TENTATIVE RÉSERVATION sur {details['court_name']}...")
+        resp = self.session.post(f"{self.base_url}/clubs/bookings", json=post_payload)
 
         if resp.status_code not in [200, 201]:
-            print(f"❌ Échec POST: {resp.text}")
+            print(f"❌ Erreur POST: {resp.text}")
             return False
 
         booking_data = resp.json()
         booking_id = booking_data.get('id')
 
-        # --- ETAPE 2 : PUT (CONFIRMATION) ---
+        # Confirmation PUT
         confirm_payload = {}
         for key, value in booking_data.items():
-            if isinstance(value, dict) and '@id' in value:
-                confirm_payload[key] = value['@id']
-            elif isinstance(value, list):
-                confirm_payload[key] = [item['@id'] if isinstance(item, dict) and '@id' in item else item for item in value]
-            else:
-                confirm_payload[key] = value
+            if isinstance(value, dict) and '@id' in value: confirm_payload[key] = value['@id']
+            elif isinstance(value, list): confirm_payload[key] = [item['@id'] if isinstance(item, dict) and '@id' in item else item for item in value]
+            else: confirm_payload[key] = value
 
         confirm_payload["confirmed"] = True
-        put_url = f"{self.base_url}/clubs/bookings/{booking_id}"
-        put_resp = requests.put(put_url, json=confirm_payload, headers=self.headers)
+        put_resp = self.session.put(f"{self.base_url}/clubs/bookings/{booking_id}", json=confirm_payload)
 
         if put_resp.status_code in [200, 201, 204]:
-            print(f"🎊 SUCCÈS CONFIRMÉ : {date_str} à {TARGET_TIME}")
+            print(f"🎊 RÉUSSI : {TARGET_DATE} à {TARGET_TIME}")
             return True
         return False
 
+def wait_for_midnight(bot):
+    now = datetime.now()
+    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    while True:
+        now = datetime.now()
+        remaining = (midnight - now).total_seconds()
+        
+        if remaining <= 0.5:
+            print("\n🚀 C'EST L'HEURE ! Lancement...")
+            break
+        
+        # Refresh token 30 secondes avant minuit pour être sûr
+        if 30.0 < remaining < 31.0:
+            print("🔄 Refreshing token avant le drop...")
+            bot.login()
+            time.sleep(1.1)
+
+        print(f"⏳ Attente : {int(remaining)}s avant minuit...", end='\r')
+        time.sleep(0.5)
 
 def send_whatsapp_notification(message):
     phone = os.getenv("TEXTMEBOT_PHONE")
     apikey = os.getenv("TEXTMEBOT_API_KEY")
-    
-    if not phone or not apikey:
-        print("⚠️ WhatsApp (TextMeBot) non configuré.")
-        return
-
-    # Encodage du message
-    encoded_message = urllib.parse.quote(message)
-    
-    # URL spécifique à TextMeBot
-    url = f"https://api.textmebot.com/send.php?recipient={phone}&apikey={apikey}&text={encoded_message}"
-    try:
-        r = requests.get(url, timeout=10)
-        if r.status_code == 200:
-            print("📱 Notification WhatsApp envoyée via TextMeBot !")
-        else:
-            print(f"❌ Erreur TextMeBot : {r.status_code} - {r.text}")
-    except Exception as e:
-        print(f"⚠️ Impossible d'envoyer le message : {e}")
+    if not (phone and apikey): return
+    url = f"https://api.textmebot.com/send.php?recipient={phone}&apikey={apikey}&text={urllib.parse.quote(message)}"
+    try: requests.get(url, timeout=5)
+    except: pass
 
 def run():
     bot = MouratoglouSniper(EMAIL, PASSWORD)
-    if bot.login():
-        success_count = 0
-        booked_dates = []
-        start_time = time.time()
-        timeout = TIMEOUT_MINUTES * 60
+    if not bot.login():
+        print("❌ Login initial échoué.")
+        return
 
-        print(f"🔥 Sniper calibré sur {TARGET_TIME} (Vérification stricte active)")
+    # Phase d'attente
+    wait_for_midnight(bot)
 
-        while success_count < MAX_BOOKINGS:
-            # Vérification du timeout
-            if (time.time() - start_time) > timeout:
-                print("\n⏱️ Temps limite atteint (5 min). Arrêt.")
+    start_shoot = time.time()
+    success = False
+
+    # Boucle agressive pendant TIMEOUT_MINUTES
+    while (time.time() - start_shoot) < (TIMEOUT_MINUTES * 60):
+        print(f"🔎 Scan {TARGET_DATE} @ {TARGET_TIME}...", end='\r')
+        slot = bot.find_slot()
+        if slot:
+            if bot.book(slot):
+                success = True
                 break
+        
+        # Très peu de repos au début pour être le premier
+        time.sleep(0.2)
 
-            dates = bot.get_valid_target_dates()
-            for date in dates:
-                if date in booked_dates: continue
-
-                print(f"🔎 Scan : {date} @ {TARGET_TIME}...", end='\r')
-
-                slot = bot.find_slot(date)
-                if slot:
-                    # Le check final est à l'intérieur de book()
-                    if bot.book(slot):
-                        success_count += 1
-                        booked_dates.append(date)
-                        print(f"✅ Status : {success_count}/{MAX_BOOKINGS} réservé(s)")
-                        if success_count >= MAX_BOOKINGS: break
-                time.sleep(0.4)
-
-            if success_count < MAX_BOOKINGS:
-                time.sleep(15)
-
-        print(f"\n🏁 Session terminée. Total réservations : {success_count}")
-        send_whatsapp_notification("\n🏁 Session terminée. Total réservations : {success_count}")
+    msg = f"🏁 Sniper terminé. Résultat : {'SUCCÈS' if success else 'ÉCHEC'}"
+    print(f"\n{msg}")
+    send_whatsapp_notification(msg)
 
 if __name__ == "__main__":
     run()
