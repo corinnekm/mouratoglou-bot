@@ -6,8 +6,8 @@ import time
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
-TARGET_DATE = "2026-01-28"  # Date spécifique cible
-TARGET_TIME = "12:30"       # Heure du créneau
+TARGET_DATE = "2026-01-27"  # Date spécifique cible
+TARGET_TIME = "13:30"       # Heure du créneau
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            
 TIMEOUT_MINUTES = 5         # On insiste pendant 5 min après minuit
@@ -160,7 +160,7 @@ def run():
         return
 
     # Phase d'attente
-    wait_for_midnight(bot)
+    #wait_for_midnight(bot)
 
     start_shoot = time.time()
     success = False
