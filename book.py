@@ -6,11 +6,11 @@ import time
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
-TARGET_DATE = "2026-01-28"  # Date spécifique cible
+TARGET_DATE = "2026-01-29"  # Date spécifique cible
 TARGET_TIME = "12:30"       # Heure du créneau
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            
-TIMEOUT_MINUTES = 5         # On insiste pendant 5 min après minuit
+TIMEOUT_MINUTES = 10        # On insiste pendant 5 min après minuit
 EMAIL = os.getenv("PADEL_EMAIL")
 PASSWORD = os.getenv("PADEL_PASSWORD")
 # ---------------------
@@ -160,7 +160,7 @@ def run():
         return
 
     # Phase d'attente
-    wait_for_midnight(bot)
+    #wait_for_midnight(bot)
 
     start_shoot = time.time()
     success = False
@@ -179,7 +179,7 @@ def run():
 
     msg = f"🏁 Sniper terminé. Résultat : {'SUCCÈS' if success else 'ÉCHEC'}"
     print(f"\n{msg}")
-    send_whatsapp_notification(msg)
+    #send_whatsapp_notification(msg)
 
 if __name__ == "__main__":
     run()
