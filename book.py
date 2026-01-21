@@ -10,7 +10,7 @@ TARGET_DATE = "2026-01-30"  # Date spécifique cible
 TARGET_TIME = "12:30"       # Heure du créneau
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            
-TIMEOUT_MINUTES = 10         # On insiste pendant 5 min après minuit
+TIMEOUT_MINUTES = 5         # On insiste pendant 5 min après minuit
 EMAIL = os.getenv("PADEL_EMAIL")
 PASSWORD = os.getenv("PADEL_PASSWORD")
 # ---------------------
@@ -124,34 +124,6 @@ class MouratoglouSniper:
             return True
         return False
 
-def wait_for_midnight(bot):
-    now = datetime.now()
-    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    while True:
-        now = datetime.now()
-        remaining = (midnight - now).total_seconds()
-        
-        if remaining <= 0.5:
-            print("\n🚀 C'EST L'HEURE ! Lancement...")
-            break
-        
-        # Refresh token 30 secondes avant minuit pour être sûr
-        if 30.0 < remaining < 31.0:
-            print("🔄 Refreshing token avant le drop...")
-            bot.login()
-            time.sleep(1.1)
-
-        print(f"⏳ Attente : {int(remaining)}s avant minuit...", end='\r')
-        time.sleep(0.5)
-
-def send_whatsapp_notification(message):
-    phone = os.getenv("TEXTMEBOT_PHONE")
-    apikey = os.getenv("TEXTMEBOT_API_KEY")
-    if not (phone and apikey): return
-    url = f"https://api.textmebot.com/send.php?recipient={phone}&apikey={apikey}&text={urllib.parse.quote(message)}"
-    try: requests.get(url, timeout=5)
-    except: pass
 
 def run():
     bot = MouratoglouSniper(EMAIL, PASSWORD)
@@ -179,7 +151,6 @@ def run():
 
     msg = f"🏁 Sniper terminé. Résultat : {'SUCCÈS' if success else 'ÉCHEC'}"
     print(f"\n{msg}")
-    send_whatsapp_notification(msg)
 
 if __name__ == "__main__":
     run()
