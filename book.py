@@ -10,7 +10,7 @@ TARGET_DATE = "2026-01-30"  # Date spécifique cible
 TARGET_TIME = "12:30"       # Heure du créneau
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            
-TIMEOUT_MINUTES = 5         # On insiste pendant 5 min après minuit
+TIMEOUT_MINUTES = 10         # On insiste pendant 5 min après minuit
 EMAIL = os.getenv("PADEL_EMAIL")
 PASSWORD = os.getenv("PADEL_PASSWORD")
 # ---------------------
