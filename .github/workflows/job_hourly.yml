@@ -1,4 +1,4 @@
-name: Padel Sniper Cron
+name: Book cancelled courts
 
 on:
   schedule:
