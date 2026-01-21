@@ -124,34 +124,6 @@ class MouratoglouSniper:
             return True
         return False
 
-def wait_for_midnight(bot):
-    now = datetime.now()
-    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    while True:
-        now = datetime.now()
-        remaining = (midnight - now).total_seconds()
-        
-        if remaining <= 0.5:
-            print("\n🚀 C'EST L'HEURE ! Lancement...")
-            break
-        
-        # Refresh token 30 secondes avant minuit pour être sûr
-        if 30.0 < remaining < 31.0:
-            print("🔄 Refreshing token avant le drop...")
-            bot.login()
-            time.sleep(1.1)
-
-        print(f"⏳ Attente : {int(remaining)}s avant minuit...", end='\r')
-        time.sleep(0.5)
-
-def send_whatsapp_notification(message):
-    phone = os.getenv("TEXTMEBOT_PHONE")
-    apikey = os.getenv("TEXTMEBOT_API_KEY")
-    if not (phone and apikey): return
-    url = f"https://api.textmebot.com/send.php?recipient={phone}&apikey={apikey}&text={urllib.parse.quote(message)}"
-    try: requests.get(url, timeout=5)
-    except: pass
 
 def run():
     bot = MouratoglouSniper(EMAIL, PASSWORD)
@@ -159,8 +131,6 @@ def run():
         print("❌ Login initial échoué.")
         return
 
-    # Phase d'attente
-    #wait_for_midnight(bot)
 
     start_shoot = time.time()
     success = False
@@ -174,8 +144,6 @@ def run():
                 success = True
                 break
         
-        # Très peu de repos au début pour être le premier
-        time.sleep(0.2)
 
     msg = f"🏁 Sniper terminé. Résultat : {'SUCCÈS' if success else 'ÉCHEC'}"
     print(f"\n{msg}")
