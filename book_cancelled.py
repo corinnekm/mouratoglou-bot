@@ -121,10 +121,10 @@ class MouratoglouSniper:
         return False
 
 def get_target_dates():
-    """Génère la liste des dates de J+1 à J+7 en excluant les weekends."""
+    """Génère la liste des dates de J+1 à J+8 en excluant les weekends."""
     valid_dates = []
     today = datetime.now()
-    for i in range(1, 8):
+    for i in range(1, 9):
         future_date = today + timedelta(days=i)
         # weekday() : 0=Lundi, 4=Vendredi, 5=Samedi, 6=Dimanche
         if future_date.weekday() < 5: 
