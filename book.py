@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 TARGET_TIME = "12:30"       # Heure du créneau
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            # Nombre de réservations souhaitées
-TIMEOUT_MINUTES = 5         # Temps d'insistance par date
+TIMEOUT_MINUTES = 10        # Temps d'insistance par date
 EMAIL = os.getenv("PADEL_EMAIL")
 PASSWORD = os.getenv("PADEL_PASSWORD")
 # ---------------------
