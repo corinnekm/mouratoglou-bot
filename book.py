@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
-TARGET_DATE = "2026-01-29"  # Date spécifique cible
+TARGET_DATE = "2026-01-30"  # Date spécifique cible
 TARGET_TIME = "12:30"       # Heure du créneau
 DURATION = 3600             # 60 minutes
 MAX_BOOKINGS = 1            
