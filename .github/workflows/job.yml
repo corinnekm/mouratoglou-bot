@@ -1,4 +1,4 @@
-name: Padel Sniper Cron
+name: Midnight sniper
 
 on:
   schedule:
