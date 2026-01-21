@@ -50,6 +50,31 @@ class MouratoglouSniper:
         except:
             return False
 
+    def find_all_slots(self, target_date):
+        url = f"{self.base_url}/clubs/playgrounds/plannings/{target_date}"
+        params = {'club.id': self.club_id, 'activities.id': self.activity_id, 'bookingType': 'unique'}
+        available_slots = [] # On va lister TOUS les terrains libres
+        try:
+            r = self.session.get(url, params=params, timeout=3)
+            if r.status_code == 200:
+                data = r.json()
+                courts = data if isinstance(data, list) else data.get('hydra:member', [])
+                for court in courts:
+                    for act in court.get('activities', []):
+                        for slot in act.get('slots', []):
+                            if slot.get('startAt') == TARGET_TIME:
+                                for p in slot.get('prices', []):
+                                    if p.get('duration') == DURATION and p.get('bookable'):
+                                        available_slots.append({
+                                            "price_id": p.get('id'),
+                                            "p_id": court.get('id'),
+                                            "court_name": court.get('name'),
+                                            "price": p.get('pricePerParticipant', 1500)
+                                        })
+            return available_slots
+        except:
+            return []
+
     def find_slot(self, target_date):
         url = f"{self.base_url}/clubs/playgrounds/plannings/{target_date}"
         params = {'club.id': self.club_id, 'activities.id': self.activity_id, 'bookingType': 'unique'}
@@ -148,11 +173,13 @@ def run():
         
         
         print(f"🔎 Scan {current_target} @ {TARGET_TIME}...", end='\r')
-        slot = bot.find_slot(current_target)
-        if slot:
-              if bot.book(slot, current_target):
-                  total_success += 1
-                  break # On passe à la date suivante si on a réussi celle-ci
+        slots = bot.find_all_slots(current_target) # On récupère la liste
+        if slots:
+            for slot in slots: # On tente de réserver chaque terrain trouvé
+                if bot.book(slot, current_target):
+                    total_success += 1
+                    break 
+            if total_success >= MAX_BOOKINGS: break
             
            
 
