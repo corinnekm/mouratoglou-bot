@@ -107,13 +107,15 @@ class MouratoglouSniper:
         for pid in self.partner_ids:
             parts.append({"client": f"/clubs/clients/{pid}", "restToPay": details['price'], "bookingOwner": False})
 
+        # Remplace cette partie dans ta fonction book() :
         post_payload = {
             "timetableBlockPrice": f"/clubs/playgrounds/timetables/blocks/prices/{details['price_id']}",
             "activity": f"/activities/{self.activity_id}",
             "club": f"/clubs/{self.club_id}",
             "name": "kubler / PADEL",
-            "startAt": f"{target_date} {TARGET_TIME}:00",
-            "endAt": end_dt.strftime("%Y-%m-%d %H:%M:%S"),
+            # On remplace l'espace par un 'T'
+            "startAt": f"{target_date}T{TARGET_TIME}:00", 
+            "endAt": end_dt.strftime("%Y-%m-%dT%H:%M:%S"),
             "playgrounds": [f"/clubs/playgrounds/{details['p_id']}"],
             "userClient": f"/user-clients/{self.user_client_id}",
             "participants": parts,
