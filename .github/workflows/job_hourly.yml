@@ -3,7 +3,7 @@ name: Book cancelled courts
 on:
   schedule:
     # 22:59 UTC is 23:59 CET (Paris/Brussels)
-    - cron: '0 * * * *'
+    - cron: '5 * * * *'
   workflow_dispatch: # Allows you to run it manually for testing
 
 jobs:
