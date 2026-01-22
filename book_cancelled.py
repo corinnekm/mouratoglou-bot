@@ -76,7 +76,7 @@ class MouratoglouSniper:
                             if slot.get('startAt') == TARGET_TIME:
                                 # --- BLOC DEBUG ---
                                 print(f"\n🔍 SLOT TROUVÉ sur {court.get('name')} à {TARGET_TIME}")
-                                print(json.dumps(slot, indent=2)) 
+    
                                 # ------------------
                                 
                                 for p in slot.get('prices', []):
