@@ -149,7 +149,7 @@ def get_target_dates():
     """Génère la liste des dates de J+7 à J+8 en excluant les weekends."""
     valid_dates = []
     today = datetime.now()
-    for i in range(8, 9):
+    for i in range(8, 10):
         future_date = today + timedelta(days=i)
         # 0=Lundi, 4=Vendredi
         if future_date.weekday() < 5: 
