@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
 TARGET_TIME = "12:30"        # Heure du créneau cible
+EXPECTED_END = "13:30"       # Heure de fin attendue
 DURATION = 3600              # 60 minutes (3600 secondes)
 MAX_BOOKINGS = 2             # S'arrête après 1 réservation réussie
 TIMEOUT_MINUTES = 10         # Temps d'insistance par date (en minutes)
@@ -72,12 +73,14 @@ class MouratoglouSniper:
                 for court in courts:
                     for act in court.get('activities', []):
                         for slot in act.get('slots', []):
-                            # VERIFICATION STRICTE DE L'HEURE
-                            if slot.get('startAt') == TARGET_TIME:
-                                # --- BLOC DEBUG ---
-                                print(f"\n🔍 SLOT TROUVÉ sur {court.get('name')} à {TARGET_TIME}")
-                                # ------------------
-                                
+
+                            start = slot.get('startAt')
+                            end = slot.get('endAt')
+
+                            # 🔒 Vérification stricte du créneau 12:30 → 13:30
+                            if start == TARGET_TIME and end == EXPECTED_END:
+                                print(f"\n🔍 SLOT TROUVÉ sur {court.get('name')} : {start}-{end}")
+
                                 for p in slot.get('prices', []):
                                     if p.get('duration') == DURATION and p.get('bookable'):
                                         return {
@@ -85,7 +88,7 @@ class MouratoglouSniper:
                                             "p_id": court.get('id'),
                                             "court_name": court.get('name'),
                                             "price": p.get('pricePerParticipant', 1500),
-                                            "real_start": slot.get('startAt')
+                                            "real_start": start
                                         }
             return None
         except Exception as e:
@@ -93,7 +96,6 @@ class MouratoglouSniper:
             return None
 
     def book(self, details, target_date):
-        # On utilise l'heure confirmée par le scan
         start_time = details['real_start']
         start_dt = datetime.strptime(f"{target_date} {start_time}", "%Y-%m-%d %H:%M")
         end_dt = start_dt + timedelta(seconds=DURATION)
@@ -102,7 +104,6 @@ class MouratoglouSniper:
         for pid in self.partner_ids:
             parts.append({"client": f"/clubs/clients/{pid}", "restToPay": details['price'], "bookingOwner": False})
 
-        # Payload avec format ISO "T" pour éviter les ambiguïtés
         post_payload = {
             "timetableBlockPrice": f"/clubs/playgrounds/timetables/blocks/prices/{details['price_id']}",
             "activity": f"/activities/{self.activity_id}",
@@ -127,7 +128,6 @@ class MouratoglouSniper:
         booking_data = resp.json()
         booking_id = booking_data.get('id')
 
-        # Préparation de la confirmation (PUT)
         confirm_payload = {}
         for key, value in booking_data.items():
             if isinstance(value, dict) and '@id' in value: 
@@ -171,9 +171,9 @@ def run():
             if slot:
                 if bot.book(slot, current_target):
                     success_count += 1
-                    break # Succès pour cette date, on passe à la suivante
+                    break
             
-            time.sleep(1) # Un peu de repos pour l'API
+            time.sleep(1)
         
         if success_count >= MAX_BOOKINGS:
             print(f"\n🎯 Quota de {MAX_BOOKINGS} réservation(s) atteint.")
