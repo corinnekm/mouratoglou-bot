@@ -73,7 +73,7 @@ class MouratoglouSniper:
                 for court in courts:
                     for act in court.get('activities', []):
                         for slot in act.get('slots', []):
-                            # VERIFICATION STRICTE DE L'HEURE
+                        if start == TARGET_TIME and end == EXPECTED_END:
                             if slot.get('startAt') == TARGET_TIME:
                                 # --- BLOC DEBUG ---
                                 print(f"\n🔍 SLOT TROUVÉ sur {court.get('name')} à {TARGET_TIME}")
