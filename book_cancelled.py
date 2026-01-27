@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
 TARGET_TIME = "12:30"        # Heure du créneau cible
+EXPECTED_END = "13:30"       # Heure de fin attendue
 DURATION = 3600              # 60 minutes (3600 secondes)
 MAX_BOOKINGS = 1             # S'arrête après 1 réservation réussie
 TIMEOUT_SECONDS = 10         # Temps d'insistance par date (en minutes)
